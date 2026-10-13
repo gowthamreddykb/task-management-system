@@ -1,0 +1,1868 @@
+{% extends "base.html" %}
+
+{% block title %}TaskFlow &bull; Trip & Task Planner Workspace{% endblock %}
+
+{% block content %}
+<div class="space-y-8 animate-in fade-in duration-200">
+
+    <!-- ================================================================= -->
+    <!-- TAB 1: DASHBOARD VIEW                                             -->
+    <!-- ================================================================= -->
+    <div id="tab-view-dashboard" class="tab-content space-y-8">
+        
+        <!-- 1. Hero Banner: Vibrant Trip Planner Welcome -->
+        <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white p-7 sm:p-9 shadow-lg shadow-indigo-500/10 border border-blue-500/20">
+            <!-- Glow decorative background patterns -->
+            <div class="absolute right-0 top-0 bottom-0 w-1/2 bg-gradient-to-l from-white/10 to-transparent pointer-events-none"></div>
+            <div class="absolute -right-10 -bottom-10 w-56 h-56 rounded-full bg-white/10 blur-2xl pointer-events-none"></div>
+            <div class="absolute -left-12 -top-12 w-48 h-48 rounded-full bg-indigo-400/20 blur-2xl pointer-events-none"></div>
+
+            <div class="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+                <div class="space-y-3 max-w-2xl">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white text-xs font-semibold shadow-xs">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-300"></i>
+                        <span>Trip & Task Planner Hub</span>
+                    </div>
+
+                    <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white leading-tight">
+                        Welcome back, {{ user.first_name|default:user.username }}! ✈️
+                    </h1>
+                    <p class="text-sm sm:text-base text-blue-100/90 font-normal leading-relaxed">
+                        Organize your travel itineraries, manage deliverables, and stay ahead of deadlines effortlessly.
+                    </p>
+
+                    <div class="flex flex-wrap items-center gap-3 pt-1 text-xs text-blue-100">
+                        <span class="flex items-center gap-1.5 bg-black/15 px-3 py-1.5 rounded-xl backdrop-blur-xs">
+                            <i data-lucide="calendar" class="w-3.5 h-3.5 text-blue-200"></i>
+                            <span>{{ today_str|default:"Today" }}</span>
+                        </span>
+                        <span class="flex items-center gap-1.5 bg-black/15 px-3 py-1.5 rounded-xl backdrop-blur-xs">
+                            <i data-lucide="compass" class="w-3.5 h-3.5 text-blue-200"></i>
+                            <span>{{ categories.count }} Categories Active</span>
+                        </span>
+                        <span class="flex items-center gap-1.5 bg-black/15 px-3 py-1.5 rounded-xl backdrop-blur-xs">
+                            <i data-lucide="activity" class="w-3.5 h-3.5 text-blue-200"></i>
+                            <span>{{ pending_tasks }} Tasks in Progress</span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Quick Action CTA Buttons -->
+                <div class="flex flex-wrap sm:flex-nowrap items-center gap-3 w-full lg:w-auto">
+                    <button
+                        type="button"
+                        onclick="openCreateModal()"
+                        class="flex-1 sm:flex-none flex items-center justify-center gap-2 h-11 px-5 bg-white hover:bg-slate-50 text-blue-700 font-bold text-xs sm:text-sm rounded-2xl shadow-md hover:shadow-lg transition-all active:scale-95 cursor-pointer"
+                    >
+                        <i data-lucide="plus" class="w-4 h-4 stroke-[2.5]"></i>
+                        <span>Plan New Task</span>
+                    </button>
+                    <button
+                        type="button"
+                        onclick="switchTab('kanban')"
+                        class="flex-1 sm:flex-none flex items-center justify-center gap-2 h-11 px-4.5 bg-white/15 hover:bg-white/25 border border-white/25 text-white font-semibold text-xs sm:text-sm rounded-2xl backdrop-blur-sm transition-all cursor-pointer"
+                    >
+                        <span>Kanban Board</span>
+                        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </button>
+                    <button
+                        type="button"
+                        onclick="sweepNotifications()"
+                        title="Trigger notification deadline evaluation"
+                        class="p-3 bg-white/15 hover:bg-white/25 border border-white/25 text-white rounded-2xl backdrop-blur-sm transition-all cursor-pointer"
+                        aria-label="Evaluate notifications"
+                    >
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Cheerful 5 KPI Metrics Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4">
+            <!-- 1: Total Tasks -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-blue-100 dark:border-blue-900/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
+                <div class="flex items-center justify-between gap-2 mb-3">
+                    <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 truncate">Total Tasks</span>
+                    <div class="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                        <i data-lucide="list-todo" class="w-4 h-4 stroke-[2.2]"></i>
+                    </div>
+                </div>
+                <div>
+                    <div class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">{{ total_tasks }}</div>
+                    <p class="text-[11px] text-slate-400 mt-0.5 truncate">{{ pending_tasks }} pending items</p>
+                </div>
+            </div>
+
+            <!-- 2: Completed -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-emerald-100 dark:border-emerald-900/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
+                <div class="flex items-center justify-between gap-2 mb-3">
+                    <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 truncate">Completed</span>
+                    <div class="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                        <i data-lucide="check-circle-2" class="w-4 h-4 stroke-[2.2]"></i>
+                    </div>
+                </div>
+                <div>
+                    <div class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">{{ completed_tasks }}</div>
+                    <p class="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5 truncate font-medium">{{ completion_rate }}% completion rate</p>
+                </div>
+            </div>
+
+            <!-- 3: In Progress -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-amber-100 dark:border-amber-900/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
+                <div class="flex items-center justify-between gap-2 mb-3">
+                    <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 truncate">In Progress</span>
+                    <div class="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                        <i data-lucide="clock" class="w-4 h-4 stroke-[2.2]"></i>
+                    </div>
+                </div>
+                <div>
+                    <div class="text-2xl sm:text-3xl font-extrabold text-amber-600 dark:text-amber-400 tracking-tight">{{ in_progress_tasks }}</div>
+                    <p class="text-[11px] text-slate-400 mt-0.5 truncate">Active & in motion</p>
+                </div>
+            </div>
+
+            <!-- 4: Urgent Attention -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-rose-100 dark:border-rose-900/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
+                <div class="flex items-center justify-between gap-2 mb-3">
+                    <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 truncate">Urgent Attention</span>
+                    <div class="w-8 h-8 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+                        <i data-lucide="alert-triangle" class="w-4 h-4 stroke-[2.2]"></i>
+                    </div>
+                </div>
+                <div>
+                    <div class="text-2xl sm:text-3xl font-extrabold text-rose-600 dark:text-rose-400 tracking-tight">{{ urgent_tasks }}</div>
+                    <p class="text-[11px] text-slate-400 mt-0.5 truncate">{{ overdue_tasks }} overdue items</p>
+                </div>
+            </div>
+
+            <!-- 5: Efficiency Score -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-violet-100 dark:border-violet-900/40 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
+                <div class="flex items-center justify-between gap-2 mb-3">
+                    <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 truncate">Efficiency Score</span>
+                    <div class="w-8 h-8 rounded-xl bg-violet-50 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400 flex items-center justify-center">
+                        <i data-lucide="trending-up" class="w-4 h-4 stroke-[2.2]"></i>
+                    </div>
+                </div>
+                <div>
+                    <div class="text-2xl sm:text-3xl font-extrabold text-violet-600 dark:text-violet-400 tracking-tight">{{ completion_rate }}%</div>
+                    <p class="text-[11px] text-slate-400 mt-0.5 truncate">Weekly velocity trend</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Destination & Project Categories Hubs -->
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                        <i data-lucide="folder-heart" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                            Trip Categories & Project Hubs
+                        </h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">
+                            Organized workspaces for destinations, packing, logistics, and planning
+                        </p>
+                    </div>
+                </div>
+                <button
+                    type="button"
+                    onclick="switchTab('categories')"
+                    class="text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 flex items-center gap-1 group cursor-pointer"
+                >
+                    <span>View All</span>
+                    <i data-lucide="chevron-right" class="w-4 h-4 group-hover:translate-x-0.5 transition-transform"></i>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-1">
+                {% for cat in categories_with_progress|slice:":4" %}
+                    <div
+                        onclick="switchTab('tasks'); filterByCategory('{{ cat.id }}');"
+                        class="group p-4 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-white dark:hover:bg-slate-800/80 transition-all cursor-pointer shadow-2xs hover:shadow-sm"
+                    >
+                        <div class="flex items-start justify-between gap-2 mb-3">
+                            <div class="flex items-center gap-2.5">
+                                <span class="w-3.5 h-3.5 rounded-lg shadow-xs" style="background-color: {{ cat.color }};"></span>
+                                <span class="font-bold text-sm text-slate-800 dark:text-slate-100 truncate group-hover:text-blue-600 transition-colors">
+                                    {{ cat.name }}
+                                </span>
+                            </div>
+                            <span class="text-[11px] font-semibold text-slate-400 bg-white dark:bg-slate-900 px-2 py-0.5 rounded-full border border-slate-100 dark:border-slate-800">
+                                {{ cat.total_tasks }} tasks
+                            </span>
+                        </div>
+
+                        <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mb-3">
+                            {{ cat.description }}
+                        </p>
+
+                        <div class="space-y-1.5">
+                            <div class="flex items-center justify-between text-[11px]">
+                                <span class="text-slate-400">Progress</span>
+                                <span class="font-bold text-slate-700 dark:text-slate-300">{{ cat.progress_pct }}%</span>
+                            </div>
+                            <div class="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                                <div class="h-full rounded-full transition-all duration-500" style="width: {{ cat.progress_pct }}%; background-color: {{ cat.color }};"></div>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="col-span-full p-6 text-center text-xs text-slate-400">
+                        No categories yet. Click "Categories" in the top bar to create your first trip hub.
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- 4. Analytics & Interactive Charts Section (4 Beautiful Chart.js Panels) -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Chart 1: Task Status Breakdown (Doughnut) -->
+            <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white">Task Status Breakdown</h3>
+                        <p class="text-xs text-slate-400">Distribution across Kanban columns</p>
+                    </div>
+                    <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400">
+                        {{ total_tasks }} Total
+                    </span>
+                </div>
+                <div class="relative w-full h-64 flex items-center justify-center">
+                    <canvas id="chart-task-status"></canvas>
+                </div>
+            </div>
+
+            <!-- Chart 2: Weekly Completion Velocity (Bar) -->
+            <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white">Weekly Completion Velocity</h3>
+                        <p class="text-xs text-slate-400">Tasks marked completed in last 7 days</p>
+                    </div>
+                    <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
+                        {{ completed_tasks }} Done
+                    </span>
+                </div>
+                <div class="w-full h-64">
+                    <canvas id="chart-weekly-velocity"></canvas>
+                </div>
+            </div>
+
+            <!-- Chart 3: Category Distribution (Horizontal Bar) -->
+            <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white">Category Distribution</h3>
+                        <p class="text-xs text-slate-400">Workload across trip projects</p>
+                    </div>
+                    <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400">
+                        {{ categories.count }} Hubs
+                    </span>
+                </div>
+                <div class="w-full h-64">
+                    <canvas id="chart-category-distribution"></canvas>
+                </div>
+            </div>
+
+            <!-- Chart 4: Productivity Trend (Area Line) -->
+            <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white">Productivity Trend</h3>
+                        <p class="text-xs text-slate-400">Created vs Completed trajectory</p>
+                    </div>
+                    <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400">
+                        Active Trend
+                    </span>
+                </div>
+                <div class="w-full h-64">
+                    <canvas id="chart-productivity-trend"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Approaching Deadlines & Activity Stream -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Approaching Deadlines -->
+            <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="clock" class="w-5 h-5 text-rose-500"></i>
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white">
+                            Approaching Deadlines & Itinerary
+                        </h3>
+                    </div>
+                    <button
+                        type="button"
+                        onclick="switchTab('tasks')"
+                        class="text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 cursor-pointer"
+                    >
+                        See all
+                    </button>
+                </div>
+
+                <div class="space-y-2.5">
+                    {% for t in upcoming_tasks %}
+                        <div
+                            onclick="openEditModal({{ t.id }})"
+                            class="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50/70 dark:bg-slate-800/40 hover:bg-slate-100/70 dark:hover:bg-slate-800 transition-all cursor-pointer border border-slate-100 dark:border-slate-800/70"
+                        >
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="w-2.5 h-2.5 rounded-full shrink-0 {% if t.priority == 'URGENT' %}bg-rose-500 animate-pulse{% elif t.priority == 'HIGH' %}bg-amber-500{% else %}bg-blue-500{% endif %}"></div>
+                                <div class="min-w-0">
+                                    <p class="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">
+                                        {{ t.title }}
+                                    </p>
+                                    <p class="text-[11px] text-slate-400 truncate">
+                                        Due: {{ t.due_date|date:"M d, Y" }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-2 shrink-0">
+                                <span class="text-[10px] font-bold px-2.5 py-1 rounded-full {% if t.priority == 'URGENT' %}bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300{% elif t.priority == 'HIGH' %}bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300{% else %}bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300{% endif %}">
+                                    {{ t.priority }}
+                                </span>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="p-8 text-center text-slate-400 text-xs">
+                            No approaching deadlines on your itinerary. You are all set!
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Activity Stream -->
+            <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="activity" class="w-5 h-5 text-indigo-500"></i>
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white">
+                            Recent Planner Activity
+                        </h3>
+                    </div>
+                    <button
+                        type="button"
+                        onclick="openNotificationsDrawer()"
+                        class="text-xs font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 cursor-pointer"
+                    >
+                        Notifications
+                    </button>
+                </div>
+
+                <div class="space-y-3">
+                    {% for n in notifications|slice:":5" %}
+                        <div class="flex items-start gap-3 p-3 rounded-2xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/70">
+                            <div class="w-2 h-2 rounded-full bg-blue-500 mt-1.5 shrink-0"></div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs text-slate-700 dark:text-slate-300 font-medium leading-relaxed">
+                                    {{ n.title }}: {{ n.message }}
+                                </p>
+                                <p class="text-[10px] text-slate-400 mt-0.5">
+                                    {{ n.created_at|timesince }} ago
+                                </p>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="p-8 text-center text-slate-400 text-xs">
+                            No recent activity logs recorded yet.
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- TAB 2: KANBAN BOARD VIEW                                          -->
+    <!-- ================================================================= -->
+    <div id="tab-view-kanban" class="tab-content hidden space-y-6">
+        <!-- Kanban Top Bar -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400">
+                    <i data-lucide="kanban" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h2 class="text-lg font-bold text-slate-900 dark:text-white">Interactive Kanban Board</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Drag or click arrows to transition task workflow stages</p>
+                </div>
+            </div>
+            <button
+                type="button"
+                onclick="openCreateModal()"
+                class="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
+            >
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>Add Task</span>
+            </button>
+        </div>
+
+        <!-- Kanban 3 Columns -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Column 1: To Do -->
+            <div class="bg-slate-100/70 dark:bg-slate-900/60 rounded-3xl p-4 border border-slate-200/70 dark:border-slate-800 flex flex-col">
+                <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-200 dark:border-slate-800">
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+                        <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">To Do</h3>
+                        <span id="kanban-todo-count" class="text-xs px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold">0</span>
+                    </div>
+                    <button onclick="openCreateModal('TODO')" class="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white transition">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                <div id="kanban-col-TODO" ondragover="allowDrop(event)" ondrop="handleDrop(event, 'TODO')" class="kanban-drop-zone flex-1 space-y-3 min-h-[350px]">
+                    <!-- Injected dynamically by JS -->
+                </div>
+            </div>
+
+            <!-- Column 2: In Progress -->
+            <div class="bg-slate-100/70 dark:bg-slate-900/60 rounded-3xl p-4 border border-slate-200/70 dark:border-slate-800 flex flex-col">
+                <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-200 dark:border-slate-800">
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+                        <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">In Progress</h3>
+                        <span id="kanban-inprogress-count" class="text-xs px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold">0</span>
+                    </div>
+                    <button onclick="openCreateModal('IN_PROGRESS')" class="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white transition">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                <div id="kanban-col-IN_PROGRESS" ondragover="allowDrop(event)" ondrop="handleDrop(event, 'IN_PROGRESS')" class="kanban-drop-zone flex-1 space-y-3 min-h-[350px]">
+                    <!-- Injected dynamically by JS -->
+                </div>
+            </div>
+
+            <!-- Column 3: Completed -->
+            <div class="bg-slate-100/70 dark:bg-slate-900/60 rounded-3xl p-4 border border-slate-200/70 dark:border-slate-800 flex flex-col">
+                <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-200 dark:border-slate-800">
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                        <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">Completed</h3>
+                        <span id="kanban-completed-count" class="text-xs px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold">0</span>
+                    </div>
+                    <button onclick="openCreateModal('COMPLETED')" class="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white transition">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                <div id="kanban-col-COMPLETED" ondragover="allowDrop(event)" ondrop="handleDrop(event, 'COMPLETED')" class="kanban-drop-zone flex-1 space-y-3 min-h-[350px]">
+                    <!-- Injected dynamically by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- TAB 3: TASKS DIRECTORY & FULL FILTER ENGINE                      -->
+    <!-- ================================================================= -->
+    <div id="tab-view-tasks" class="tab-content hidden space-y-4">
+        <!-- Search and Comprehensive 5-Filter Bar (Matching React TaskList) -->
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                <!-- Search Input -->
+                <div class="relative flex-1">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                    <input
+                        type="text"
+                        id="task-search-input"
+                        oninput="applyTaskFilters()"
+                        placeholder="Search destinations, tasks, activities..."
+                        class="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    >
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button
+                        type="button"
+                        onclick="openCreateModal()"
+                        class="h-9 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-95 transition-all"
+                    >
+                        <i data-lucide="plus" class="w-3.5 h-3.5 stroke-[2.8]"></i>
+                        <span>Create Task</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 5 Filters Row (Status, Category, Priority, Date, Sort By) -->
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
+                <!-- Status Filter -->
+                <div>
+                    <select
+                        id="filter-status"
+                        onchange="applyTaskFilters()"
+                        class="w-full py-1.5 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:border-blue-500 cursor-pointer"
+                    >
+                        <option value="ALL">All Statuses</option>
+                        <option value="TODO">To Do</option>
+                        <option value="IN_PROGRESS">In Progress</option>
+                        <option value="COMPLETED">Completed</option>
+                    </select>
+                </div>
+
+                <!-- Category Filter -->
+                <div>
+                    <select
+                        id="filter-category"
+                        onchange="applyTaskFilters()"
+                        class="w-full py-1.5 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:border-blue-500 cursor-pointer"
+                    >
+                        <option value="ALL">All Categories</option>
+                        {% for cat in categories %}
+                            <option value="{{ cat.id }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Priority Filter -->
+                <div>
+                    <select
+                        id="filter-priority"
+                        onchange="applyTaskFilters()"
+                        class="w-full py-1.5 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:border-blue-500 cursor-pointer"
+                    >
+                        <option value="ALL">All Priorities</option>
+                        <option value="URGENT">Urgent</option>
+                        <option value="HIGH">High</option>
+                        <option value="MEDIUM">Medium</option>
+                        <option value="LOW">Low</option>
+                    </select>
+                </div>
+
+                <!-- Date Filter -->
+                <div>
+                    <select
+                        id="filter-date"
+                        onchange="applyTaskFilters()"
+                        class="w-full py-1.5 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:border-blue-500 cursor-pointer"
+                    >
+                        <option value="ALL">All Dates</option>
+                        <option value="TODAY">Due Today</option>
+                        <option value="WEEK">Due This Week</option>
+                        <option value="OVERDUE">Overdue</option>
+                    </select>
+                </div>
+
+                <!-- Sort By -->
+                <div>
+                    <select
+                        id="filter-sort"
+                        onchange="applyTaskFilters()"
+                        class="w-full py-1.5 px-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium focus:outline-none focus:border-blue-500 cursor-pointer"
+                    >
+                        <option value="due_date_asc">Due Date: Soonest</option>
+                        <option value="due_date_desc">Due Date: Latest</option>
+                        <option value="priority_desc">Priority: High to Low</option>
+                        <option value="priority_asc">Priority: Low to High</option>
+                        <option value="title_asc">Title: A-Z</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tasks Container & Table -->
+        <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
+            <div id="tasks-table-body" class="divide-y divide-slate-100 dark:divide-slate-800">
+                <!-- Dynamically rendered by JS with full interactivity -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="tasks-empty-state" class="hidden p-12 text-center text-slate-400">
+                <i data-lucide="inbox" class="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600 mb-2"></i>
+                <p class="font-semibold text-sm">No tasks matched your current filter.</p>
+                <p class="text-xs text-slate-500 mt-1">Try resetting the search query or status filter.</p>
+            </div>
+
+            <!-- Pagination Bar -->
+            <div class="p-4 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500">
+                <span id="tasks-pagination-info">Showing all tasks</span>
+                <div class="flex items-center gap-2">
+                    <button id="tasks-prev-btn" onclick="prevTasksPage()" class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40">Previous</button>
+                    <button id="tasks-next-btn" onclick="nextTasksPage()" class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40">Next</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- TAB 4: CATEGORIES MANAGER VIEW                                    -->
+    <!-- ================================================================= -->
+    <div id="tab-view-categories" class="tab-content hidden space-y-6">
+        <!-- Add Category Card -->
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="p-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400">
+                    <i data-lucide="layers" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h2 class="text-lg font-bold text-slate-900 dark:text-white">Trip Categories & Project Hubs</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Create color-coded spaces for destinations, packing checklists, and itinerary groups</p>
+                </div>
+            </div>
+
+            <form id="create-category-form" onsubmit="handleCreateCategory(event)" class="space-y-4 pt-2">
+                {% csrf_token %}
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="sm:col-span-2 space-y-1.5">
+                        <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">Category / Trip Name</label>
+                        <input
+                            type="text"
+                            id="cat-name-input"
+                            required
+                            placeholder="e.g. Tokyo Autumn Vacation 2026, Flight Logistics..."
+                            class="w-full px-3.5 py-2 rounded-xl text-xs border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                        >
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">Accent Color</label>
+                        <div class="flex items-center gap-2">
+                            <input
+                                type="color"
+                                id="cat-color-input"
+                                value="#3b82f6"
+                                class="w-10 h-8 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer bg-transparent"
+                            >
+                            <input
+                                type="text"
+                                id="cat-color-hex"
+                                value="#3b82f6"
+                                class="w-full px-2.5 py-2 rounded-xl text-xs border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-white font-mono uppercase"
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-1.5">
+                    <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">Description (Optional)</label>
+                    <input
+                        type="text"
+                        id="cat-desc-input"
+                        placeholder="Itinerary, booking confirmation, hotel details, or baggage limits..."
+                        class="w-full px-3.5 py-2 rounded-xl text-xs border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                    >
+                </div>
+
+                <div class="flex justify-end">
+                    <button
+                        type="submit"
+                        class="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer"
+                    >
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        <span>Create Category</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Categories List Grid -->
+        <div id="categories-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Dynamically populated by JS -->
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- TAB 5: EXPORT & PDF REPORTS VIEW (Matching React ReportsExportView)-->
+    <!-- ================================================================= -->
+    <div id="tab-view-reports" class="tab-content hidden space-y-6">
+        <!-- Top Export Banner -->
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="p-3 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-2xl">
+                    <i data-lucide="file-down" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h2 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Export & Productivity Reports</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Generate standards-compliant CSV files and formatted printable PDF reports</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2.5 w-full md:w-auto">
+                <button
+                    type="button"
+                    onclick="triggerExportCSV()"
+                    class="flex-1 md:flex-initial h-9 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs transition"
+                >
+                    <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-600"></i>
+                    <span>Export CSV</span>
+                </button>
+                <button
+                    type="button"
+                    onclick="triggerExportPDF()"
+                    class="flex-1 md:flex-initial h-9 px-4 bg-slate-900 hover:bg-slate-800 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-xs flex items-center justify-center gap-1.5 cursor-pointer transition"
+                >
+                    <i data-lucide="file-text" class="w-4 h-4"></i>
+                    <span>Export / Print PDF</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Export Filter & Report Customization -->
+        <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white">Report Configuration & Scope</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-600 dark:text-slate-400 mb-1">Status Scope</label>
+                    <select id="export-filter-status" onchange="renderReportPreview()" class="w-full p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+                        <option value="ALL">All Statuses</option>
+                        <option value="TODO">To Do Only</option>
+                        <option value="IN_PROGRESS">In Progress Only</option>
+                        <option value="COMPLETED">Completed Only</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-600 dark:text-slate-400 mb-1">Category Scope</label>
+                    <select id="export-filter-category" onchange="renderReportPreview()" class="w-full p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+                        <option value="ALL">All Categories</option>
+                        {% for cat in categories %}
+                            <option value="{{ cat.id }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-600 dark:text-slate-400 mb-1">Priority Scope</label>
+                    <select id="export-filter-priority" onchange="renderReportPreview()" class="w-full p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+                        <option value="ALL">All Priorities</option>
+                        <option value="URGENT">Urgent Only</option>
+                        <option value="HIGH">High Only</option>
+                        <option value="MEDIUM">Medium Only</option>
+                        <option value="LOW">Low Only</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-semibold text-slate-600 dark:text-slate-400 mb-1">Custom Title</label>
+                    <input type="text" id="export-title-input" oninput="renderReportPreview()" value="TaskFlow Executive Productivity Report" class="w-full p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+                </div>
+            </div>
+        </div>
+
+        <!-- Printable Report Preview Container -->
+        <div id="printable-report-area" class="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-6">
+            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+                <div>
+                    <h2 id="report-preview-title" class="text-lg font-bold text-slate-900 dark:text-white">TaskFlow Executive Productivity Report</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Generated for {{ user.username }} &bull; {{ today_str }}</p>
+                </div>
+                <div class="text-right">
+                    <span class="text-xs font-mono px-3 py-1 bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 rounded-full font-bold">Official Export</span>
+                </div>
+            </div>
+
+            <!-- Report Stats Row -->
+            <div class="grid grid-cols-3 gap-4 text-center">
+                <div class="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-slate-800">
+                    <span class="text-[11px] text-slate-400">Total Scoped</span>
+                    <p id="report-stat-total" class="text-xl font-extrabold text-slate-900 dark:text-white">0</p>
+                </div>
+                <div class="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-slate-800">
+                    <span class="text-[11px] text-slate-400">Completed</span>
+                    <p id="report-stat-completed" class="text-xl font-extrabold text-emerald-600">0</p>
+                </div>
+                <div class="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-slate-800">
+                    <span class="text-[11px] text-slate-400">Completion Rate</span>
+                    <p id="report-stat-rate" class="text-xl font-extrabold text-blue-600">0%</p>
+                </div>
+            </div>
+
+            <!-- Formatted Tasks Table -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                        <tr class="border-b border-slate-200 dark:border-slate-800 text-slate-400 font-semibold uppercase tracking-wider">
+                            <th class="py-2.5 px-3">Title</th>
+                            <th class="py-2.5 px-3">Category</th>
+                            <th class="py-2.5 px-3">Priority</th>
+                            <th class="py-2.5 px-3">Status</th>
+                            <th class="py-2.5 px-3">Due Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="report-preview-tbody" class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ===================================================================== -->
+<!-- MODALS & DRAWERS                                                      -->
+<!-- ===================================================================== -->
+
+<!-- 1. CREATE / PLAN TASK MODAL -->
+<div id="create-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-2xl space-y-5">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div class="flex items-center gap-2.5">
+                <div class="p-2 bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 rounded-xl">
+                    <i data-lucide="plus" class="w-5 h-5"></i>
+                </div>
+                <h3 class="text-base font-bold text-slate-900 dark:text-white">Plan New Task or Trip Deliverable</h3>
+            </div>
+            <button onclick="closeCreateModal()" class="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-white transition">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <form onsubmit="handleCreateTaskSubmit(event)" class="space-y-4">
+            {% csrf_token %}
+            <div class="space-y-1.5">
+                <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">Task Title *</label>
+                <input
+                    type="text"
+                    id="new-task-title"
+                    required
+                    placeholder="e.g. Book Shibuya hotel, Print boarding passes..."
+                    class="w-full px-3.5 py-2.5 rounded-xl text-xs border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                >
+            </div>
+
+            <div class="space-y-1.5">
+                <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">Description / Travel Notes</label>
+                <textarea
+                    id="new-task-desc"
+                    rows="3"
+                    placeholder="Confirmation numbers, flight details, or packing checklists..."
+                    class="w-full px-3.5 py-2.5 rounded-xl text-xs border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                ></textarea>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div class="space-y-1.5">
+                    <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">Category / Trip Hub</label>
+                    <select
+                        id="new-task-category"
+                        class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-white"
+                    >
+                        <option value="">(No Category)</option>
+                        {% for cat in categories %}
+                            <option value="{{ cat.id }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="space-y-1.5">
+                    <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">Priority</label>
+                    <select
+                        id="new-task-priority"
+                        class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-white"
+                    >
+                        <option value="MEDIUM">Medium</option>
+                        <option value="URGENT">Urgent</option>
+                        <option value="HIGH">High</option>
+                        <option value="LOW">Low</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div class="space-y-1.5">
+                    <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">Workflow Status</label>
+                    <select
+                        id="new-task-status"
+                        class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-white"
+                    >
+                        <option value="TODO">To Do</option>
+                        <option value="IN_PROGRESS">In Progress</option>
+                        <option value="COMPLETED">Completed</option>
+                    </select>
+                </div>
+
+                <div class="space-y-1.5">
+                    <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">Due Date</label>
+                    <input
+                        type="date"
+                        id="new-task-due"
+                        class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-white"
+                    >
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <button
+                    type="button"
+                    onclick="closeCreateModal()"
+                    class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                    Cancel
+                </button>
+                <button
+                    type="submit"
+                    class="px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
+                >
+                    Save Task
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 2. EDIT TASK MODAL -->
+<div id="edit-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-2xl space-y-5">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Edit Task Details</h3>
+            <button onclick="closeEditModal()" class="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-white transition">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <form onsubmit="handleEditTaskSubmit(event)" class="space-y-4">
+            <input type="hidden" id="edit-task-id">
+            <div class="space-y-1.5">
+                <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">Task Title *</label>
+                <input
+                    type="text"
+                    id="edit-task-title"
+                    required
+                    class="w-full px-3.5 py-2.5 rounded-xl text-xs border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                >
+            </div>
+
+            <div class="space-y-1.5">
+                <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">Description</label>
+                <textarea
+                    id="edit-task-desc"
+                    rows="3"
+                    class="w-full px-3.5 py-2.5 rounded-xl text-xs border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-white focus:outline-none focus:border-blue-500"
+                ></textarea>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div class="space-y-1.5">
+                    <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">Category</label>
+                    <select
+                        id="edit-task-category"
+                        class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-white"
+                    >
+                        <option value="">(No Category)</option>
+                        {% for cat in categories %}
+                            <option value="{{ cat.id }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="space-y-1.5">
+                    <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">Priority</label>
+                    <select
+                        id="edit-task-priority"
+                        class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-white"
+                    >
+                        <option value="MEDIUM">Medium</option>
+                        <option value="URGENT">Urgent</option>
+                        <option value="HIGH">High</option>
+                        <option value="LOW">Low</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div class="space-y-1.5">
+                    <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">Status</label>
+                    <select
+                        id="edit-task-status"
+                        class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-white"
+                    >
+                        <option value="TODO">To Do</option>
+                        <option value="IN_PROGRESS">In Progress</option>
+                        <option value="COMPLETED">Completed</option>
+                    </select>
+                </div>
+
+                <div class="space-y-1.5">
+                    <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">Due Date</label>
+                    <input
+                        type="date"
+                        id="edit-task-due"
+                        class="w-full px-3 py-2 rounded-xl text-xs border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-white"
+                    >
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
+                <button
+                    type="button"
+                    onclick="triggerDeleteFromEdit()"
+                    class="px-3.5 py-2 text-xs font-semibold text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition"
+                >
+                    Delete Task
+                </button>
+                <div class="flex items-center gap-2">
+                    <button
+                        type="button"
+                        onclick="closeEditModal()"
+                        class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-300"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        class="px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-xs font-bold transition shadow-xs"
+                    >
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 3. NOTIFICATIONS DRAWER -->
+<div id="notifications-drawer" class="fixed inset-y-0 right-0 z-50 w-full max-w-sm bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl p-6 flex flex-col justify-between translate-x-full transition-transform duration-300">
+    <div class="space-y-4 flex-1 overflow-y-auto">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div class="flex items-center gap-2">
+                <i data-lucide="bell" class="w-5 h-5 text-blue-600"></i>
+                <h3 class="font-bold text-sm text-slate-900 dark:text-white">Notifications & Alerts</h3>
+            </div>
+            <button onclick="closeNotificationsDrawer()" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <div class="space-y-2.5">
+            {% for n in notifications %}
+                <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800/80">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-bold text-slate-800 dark:text-slate-200">{{ n.title }}</span>
+                        <span class="text-[10px] text-slate-400">{{ n.created_at|timesince }} ago</span>
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">{{ n.message }}</p>
+                </div>
+            {% empty %}
+                <div class="py-12 text-center text-xs text-slate-400">
+                    You have no unread notifications.
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+        <button onclick="sweepNotifications()" class="text-xs text-blue-600 hover:underline font-semibold">Sweep Deadlines</button>
+        <button onclick="closeNotificationsDrawer()" class="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs font-semibold">Close</button>
+    </div>
+</div>
+
+<!-- 4. USER PROFILE MODAL -->
+<div id="profile-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-sm w-full p-6 border border-slate-200/80 dark:border-slate-800 shadow-2xl space-y-5 text-center">
+        <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 text-white font-extrabold text-2xl flex items-center justify-center mx-auto shadow-md">
+            {{ user.first_name|default:user.username|slice:":1"|upper }}
+        </div>
+        <div>
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">{{ user.first_name|default:user.username }}</h3>
+            <p class="text-xs text-slate-400">{{ user.email|default:"Personal Workspace" }}</p>
+            <span class="inline-block mt-2 px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                Single-User Mode Active
+            </span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 text-left">
+            <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800">
+                <span class="text-[10px] text-slate-400">Total Tasks</span>
+                <p class="text-base font-bold text-slate-900 dark:text-white">{{ total_tasks }}</p>
+            </div>
+            <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800">
+                <span class="text-[10px] text-slate-400">Completed</span>
+                <p class="text-base font-bold text-emerald-500">{{ completed_tasks }}</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 pt-2">
+            <button onclick="closeProfileModal()" class="flex-1 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                Close
+            </button>
+            <a href="{% url 'logout' %}" class="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition shadow-xs">
+                Log Out
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- 5. DELETE TASK CONFIRMATION MODAL -->
+<div id="delete-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-sm w-full p-6 border border-slate-200/80 dark:border-slate-800 shadow-2xl space-y-4 text-center">
+        <div class="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-500 flex items-center justify-center mx-auto">
+            <i data-lucide="trash-2" class="w-6 h-6 stroke-[2.2]"></i>
+        </div>
+        <div>
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Delete Task?</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">This action cannot be undone. Are you sure you want to permanently remove this task from your workspace?</p>
+        </div>
+        <div class="flex items-center gap-2 pt-2">
+            <button type="button" onclick="closeDeleteModal()" class="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition cursor-pointer">
+                Cancel
+            </button>
+            <button type="button" onclick="confirmDeleteTaskAction()" class="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer">
+                Delete
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ===================================================================== -->
+<!-- CLIENT-SIDE APPLICATION DATA & SCRIPT LOGIC                           -->
+<!-- ===================================================================== -->
+<script id="tasks-json-data" type="application/json">{{ tasks_json|safe }}</script>
+<script id="categories-json-data" type="application/json">{{ categories_json|safe }}</script>
+<script>
+    let allTasks = [];
+    let allCategories = [];
+    try {
+        allTasks = JSON.parse(document.getElementById('tasks-json-data')?.textContent || '[]');
+    } catch (e) {
+        console.error('Failed to parse tasks JSON', e);
+        allTasks = [];
+    }
+    try {
+        allCategories = JSON.parse(document.getElementById('categories-json-data')?.textContent || '[]');
+    } catch (e) {
+        console.error('Failed to parse categories JSON', e);
+        allCategories = [];
+    }
+    let currentTab = 'dashboard';
+    let tasksPage = 1;
+    const TASKS_PER_PAGE = 8;
+    let chartInstances = {};
+
+    // Get CSRF Token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken') || '{{ csrf_token }}';
+
+    // Tab Switching
+    function switchTab(tabId) {
+        currentTab = tabId;
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+        const targetView = document.getElementById(`tab-view-${tabId}`);
+        if (targetView) targetView.classList.remove('hidden');
+
+        // Update Desktop Header Tabs
+        document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+            btn.className = "nav-tab-btn flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800/60";
+        });
+        const activeBtn = document.getElementById(`nav-btn-${tabId}`);
+        if (activeBtn) {
+            activeBtn.className = "nav-tab-btn flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs";
+        }
+
+        // Update Mobile Bottom Tabs
+        document.querySelectorAll('.mobile-tab-btn').forEach(btn => {
+            if (btn.getAttribute('data-tab') === tabId) {
+                btn.className = "mobile-tab-btn p-1.5 text-blue-600 dark:text-blue-400 font-bold flex flex-col items-center";
+            } else {
+                btn.className = "mobile-tab-btn p-1.5 text-slate-500 dark:text-slate-400 font-medium flex flex-col items-center";
+            }
+        });
+
+        // Trigger tab specific renders
+        if (tabId === 'dashboard') {
+            renderDashboardCharts(document.documentElement.classList.contains('dark'));
+        } else if (tabId === 'kanban') {
+            renderKanban();
+        } else if (tabId === 'tasks') {
+            applyTaskFilters();
+        } else if (tabId === 'categories') {
+            renderCategoriesGrid();
+        } else if (tabId === 'reports') {
+            renderReportPreview();
+        }
+
+        if (window.lucide) window.lucide.createIcons();
+    }
+
+    // Chart.js Analytics Rendering (Matching React Preview)
+    function renderDashboardCharts(isDark) {
+        const textColor = isDark ? "#cbd5e1" : "#475569";
+        const gridColor = isDark ? "#334155" : "#f1f5f9";
+        const borderColor = isDark ? "#1e293b" : "#ffffff";
+
+        // Chart 1: Status Doughnut
+        const statusCtx = document.getElementById('chart-task-status')?.getContext('2d');
+        if (statusCtx) {
+            if (chartInstances.status) chartInstances.status.destroy();
+            const todo = allTasks.filter(t => t.status === 'TODO').length;
+            const inProg = allTasks.filter(t => t.status === 'IN_PROGRESS').length;
+            const done = allTasks.filter(t => t.status === 'COMPLETED').length;
+            const total = todo + inProg + done;
+
+            chartInstances.status = new Chart(statusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['To Do', 'In Progress', 'Completed'],
+                    datasets: [{
+                        data: total === 0 ? [1] : [todo, inProg, done],
+                        backgroundColor: total === 0 ? ['#94a3b8'] : ['#f59e0b', '#0284c7', '#10b981'],
+                        borderColor: borderColor,
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: textColor, font: { family: 'Plus Jakarta Sans', size: 12 }, padding: 16 }
+                        }
+                    },
+                    cutout: '72%'
+                }
+            });
+        }
+
+        // Chart 2: Weekly Velocity Bar
+        const weeklyCtx = document.getElementById('chart-weekly-velocity')?.getContext('2d');
+        if (weeklyCtx) {
+            if (chartInstances.weekly) chartInstances.weekly.destroy();
+            const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+            const now = new Date();
+            const last7Days = [];
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date(now.getTime() - i * 864e5);
+                last7Days.push({ label: days[d.getDay()], dateStr: d.toISOString().slice(0, 10), count: 0 });
+            }
+            allTasks.forEach(t => {
+                if (t.status === 'COMPLETED') {
+                    const compDate = (t.completed_at || t.updated_at || t.created_at || '').slice(0, 10);
+                    if (compDate) {
+                        const match = last7Days.find(d => d.dateStr === compDate);
+                        if (match) match.count++;
+                    }
+                }
+            });
+
+            chartInstances.weekly = new Chart(weeklyCtx, {
+                type: 'bar',
+                data: {
+                    labels: last7Days.map(d => d.label),
+                    datasets: [{
+                        label: 'Tasks Completed',
+                        data: last7Days.map(d => d.count),
+                        backgroundColor: 'rgba(6, 78, 67, 0.85)',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: textColor } },
+                        y: { beginAtZero: true, grid: { color: gridColor }, ticks: { stepSize: 1, color: textColor } }
+                    }
+                }
+            });
+        }
+
+        // Chart 3: Category Distribution Bar
+        const catCtx = document.getElementById('chart-category-distribution')?.getContext('2d');
+        if (catCtx) {
+            if (chartInstances.category) chartInstances.category.destroy();
+            const counts = allCategories.map(c => ({
+                name: c.name,
+                color: c.color || '#3b82f6',
+                count: allTasks.filter(t => t.category_id === c.id).length
+            }));
+
+            chartInstances.category = new Chart(catCtx, {
+                type: 'bar',
+                data: {
+                    labels: counts.map(c => c.name),
+                    datasets: [{
+                        data: counts.map(c => c.count),
+                        backgroundColor: counts.map(c => c.color),
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { beginAtZero: true, grid: { color: gridColor }, ticks: { stepSize: 1, color: textColor } },
+                        y: { grid: { display: false }, ticks: { color: textColor } }
+                    }
+                }
+            });
+        }
+
+        // Chart 4: Productivity Trend Line
+        const trendCtx = document.getElementById('chart-productivity-trend')?.getContext('2d');
+        if (trendCtx) {
+            if (chartInstances.trend) chartInstances.trend.destroy();
+            const done = allTasks.filter(t => t.status === 'COMPLETED').length;
+            const inProg = allTasks.filter(t => t.status === 'IN_PROGRESS').length;
+            const todo = allTasks.filter(t => t.status === 'TODO').length;
+
+            chartInstances.trend = new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                    datasets: [{
+                        label: 'Velocity Trend',
+                        data: [Math.max(1, Math.round(todo * 0.5)), Math.max(2, Math.round(inProg * 1.2)), Math.max(1, done), Math.max(3, done + 2)],
+                        fill: true,
+                        borderColor: '#e76f51',
+                        backgroundColor: isDark ? 'rgba(231, 111, 81, 0.18)' : 'rgba(231, 111, 81, 0.10)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: textColor } },
+                        y: { beginAtZero: true, grid: { color: gridColor }, ticks: { stepSize: 1, color: textColor } }
+                    }
+                }
+            });
+        }
+    }
+    window.renderDashboardCharts = renderDashboardCharts;
+
+    // KANBAN BOARD LOGIC
+    function renderKanban() {
+        ['TODO', 'IN_PROGRESS', 'COMPLETED'].forEach(status => {
+            const container = document.getElementById(`kanban-col-${status}`);
+            if (!container) return;
+            const tasksInCol = allTasks.filter(t => t.status === status);
+            const countEl = document.getElementById(`kanban-${status.toLowerCase().replace('_', '')}-count`);
+            if (countEl) countEl.innerText = tasksInCol.length;
+
+            if (tasksInCol.length === 0) {
+                container.innerHTML = `<div class="p-8 text-center text-xs text-slate-400 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">No tasks in this lane</div>`;
+                return;
+            }
+
+            container.innerHTML = tasksInCol.map(task => `
+                <div
+                    draggable="true"
+                    ondragstart="handleDragStart(event, ${task.id})"
+                    class="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-xs hover:shadow-md transition cursor-grab space-y-3"
+                >
+                    <div class="flex items-start justify-between gap-2">
+                        <span class="text-xs font-bold text-slate-800 dark:text-slate-100">${escapeHtml(task.title)}</span>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${getPriorityClass(task.priority)}">${task.priority}</span>
+                    </div>
+                    ${task.description ? `<p class="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2">${escapeHtml(task.description)}</p>` : ''}
+                    <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700/60 text-[10px]">
+                        <span class="text-slate-400">${task.due_date ? 'Due: ' + task.due_date.slice(0,10) : 'No deadline'}</span>
+                        <div class="flex items-center gap-1">
+                            ${status !== 'TODO' ? `<button onclick="updateTaskStatus(${task.id}, '${status === 'COMPLETED' ? 'IN_PROGRESS' : 'TODO'}')" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-400 hover:text-slate-600" title="Move Left">&larr;</button>` : ''}
+                            ${status !== 'COMPLETED' ? `<button onclick="updateTaskStatus(${task.id}, '${status === 'TODO' ? 'IN_PROGRESS' : 'COMPLETED'}')" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-400 hover:text-slate-600" title="Move Right">&rarr;</button>` : ''}
+                            <button onclick="openEditModal(${task.id})" class="p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded text-slate-400 hover:text-blue-500"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        });
+        if (window.lucide) window.lucide.createIcons();
+    }
+
+    let draggedTaskId = null;
+    function handleDragStart(ev, id) {
+        draggedTaskId = id;
+        ev.dataTransfer.setData('text/plain', id);
+    }
+    function allowDrop(ev) { ev.preventDefault(); }
+    function handleDrop(ev, newStatus) {
+        ev.preventDefault();
+        if (draggedTaskId) {
+            updateTaskStatus(draggedTaskId, newStatus);
+            draggedTaskId = null;
+        }
+    }
+
+    // UPDATE TASK STATUS (Instant Client + API Sync)
+    async function updateTaskStatus(taskId, newStatus) {
+        const task = allTasks.find(t => t.id === taskId);
+        if (task) {
+            task.status = newStatus;
+            if (newStatus === 'COMPLETED') task.completed_at = new Date().toISOString();
+        }
+        renderKanban();
+        applyTaskFilters();
+
+        try {
+            await fetch(`/api/tasks/${taskId}/status/`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+                body: JSON.stringify({ status: newStatus })
+            });
+        } catch (err) {
+            console.error('Status sync error', err);
+        }
+    }
+
+    // FILTER & SEARCH TASKS LOGIC (Tasks Tab)
+    function applyTaskFilters() {
+        const search = (document.getElementById('task-search-input')?.value || '').toLowerCase();
+        const statusFilter = document.getElementById('filter-status')?.value || 'ALL';
+        const categoryFilter = document.getElementById('filter-category')?.value || 'ALL';
+        const priorityFilter = document.getElementById('filter-priority')?.value || 'ALL';
+        const dateFilter = document.getElementById('filter-date')?.value || 'ALL';
+        const sortBy = document.getElementById('filter-sort')?.value || 'due_date_asc';
+
+        const now = new Date().getTime();
+        let filtered = allTasks.filter(t => {
+            if (search && !t.title.toLowerCase().includes(search) && !t.description.toLowerCase().includes(search)) return false;
+            if (statusFilter !== 'ALL' && t.status !== statusFilter) return false;
+            if (categoryFilter !== 'ALL' && String(t.category_id) !== String(categoryFilter)) return false;
+            if (priorityFilter !== 'ALL' && t.priority !== priorityFilter) return false;
+            if (dateFilter !== 'ALL' && t.due_date) {
+                const dueTime = new Date(t.due_date).getTime();
+                if (dateFilter === 'OVERDUE' && dueTime >= now) return false;
+                if (dateFilter === 'TODAY' && (dueTime < now || dueTime > now + 864e5)) return false;
+                if (dateFilter === 'WEEK' && (dueTime < now || dueTime > now + 7 * 864e5)) return false;
+            }
+            return true;
+        });
+
+        // Sorting
+        filtered.sort((a, b) => {
+            if (sortBy === 'title_asc') return a.title.localeCompare(b.title);
+            if (sortBy === 'priority_desc') return getPriorityWeight(b.priority) - getPriorityWeight(a.priority);
+            if (sortBy === 'priority_asc') return getPriorityWeight(a.priority) - getPriorityWeight(b.priority);
+            if (sortBy === 'due_date_desc') return (new Date(b.due_date || 0)) - (new Date(a.due_date || 0));
+            return (new Date(a.due_date || '9999')) - (new Date(b.due_date || '9999'));
+        });
+
+        renderFilteredTasksTable(filtered);
+    }
+
+    function renderFilteredTasksTable(tasksList) {
+        const tbody = document.getElementById('tasks-table-body');
+        const emptyState = document.getElementById('tasks-empty-state');
+        const infoEl = document.getElementById('tasks-pagination-info');
+        if (!tbody) return;
+
+        if (tasksList.length === 0) {
+            tbody.innerHTML = '';
+            emptyState?.classList.remove('hidden');
+            if (infoEl) infoEl.innerText = '0 tasks found';
+            return;
+        }
+        emptyState?.classList.add('hidden');
+
+        const totalPages = Math.ceil(tasksList.length / TASKS_PER_PAGE);
+        if (tasksPage > totalPages) tasksPage = 1;
+        const start = (tasksPage - 1) * TASKS_PER_PAGE;
+        const pageTasks = tasksList.slice(start, start + TASKS_PER_PAGE);
+
+        if (infoEl) infoEl.innerText = `Showing ${start + 1}–${Math.min(start + TASKS_PER_PAGE, tasksList.length)} of ${tasksList.length} tasks`;
+
+        tbody.innerHTML = pageTasks.map(t => {
+            const isDone = t.status === 'COMPLETED';
+            return `
+                <div class="p-4 sm:p-5 hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="flex items-start gap-3.5">
+                        <button
+                            type="button"
+                            onclick="updateTaskStatus(${t.id}, '${isDone ? 'TODO' : 'COMPLETED'}')"
+                            class="mt-1 w-5 h-5 rounded-lg border flex items-center justify-center transition cursor-pointer ${isDone ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-transparent hover:border-blue-500'}"
+                        >
+                            <i data-lucide="check" class="w-3.5 h-3.5 stroke-[3]"></i>
+                        </button>
+                        <div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <h4 class="text-sm font-bold ${isDone ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'}">
+                                    ${escapeHtml(t.title)}
+                                </h4>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${getPriorityClass(t.priority)}">${t.priority}</span>
+                                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                                    ${escapeHtml(t.category_name || 'No Category')}
+                                </span>
+                            </div>
+                            ${t.description ? `<p class="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-1">${escapeHtml(t.description)}</p>` : ''}
+                            <div class="flex items-center gap-3 text-[11px] text-slate-400 mt-1.5">
+                                <span>${t.due_date ? '📅 Due: ' + t.due_date.slice(0, 10) : 'No due date'}</span>
+                                <span>&bull;</span>
+                                <span class="capitalize font-semibold text-slate-600 dark:text-slate-300">${t.status.replace('_', ' ').toLowerCase()}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 self-end sm:self-auto">
+                        <button onclick="openEditModal(${t.id})" class="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center gap-1.5">
+                            <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                            <span>Edit</span>
+                        </button>
+                        <button onclick="requestDeleteTask(${t.id})" class="p-1.5 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer" title="Delete Task">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        if (window.lucide) window.lucide.createIcons();
+    }
+
+    function prevTasksPage() { if (tasksPage > 1) { tasksPage--; applyTaskFilters(); } }
+    function nextTasksPage() { tasksPage++; applyTaskFilters(); }
+
+    function filterByCategory(catId) {
+        const catSelect = document.getElementById('filter-category');
+        if (catSelect) {
+            catSelect.value = catId;
+            applyTaskFilters();
+        }
+    }
+
+    // CATEGORIES MANAGER LOGIC
+    function renderCategoriesGrid() {
+        const grid = document.getElementById('categories-grid');
+        if (!grid) return;
+        grid.innerHTML = allCategories.map(c => {
+            const count = allTasks.filter(t => t.category_id === c.id).length;
+            return `
+                <div class="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <span class="w-4 h-4 rounded-lg" style="background-color: ${c.color};"></span>
+                            <h4 class="font-bold text-sm text-slate-900 dark:text-white">${escapeHtml(c.name)}</h4>
+                        </div>
+                        <span class="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold">${count} tasks</span>
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">${escapeHtml(c.description || 'No description provided')}</p>
+                    <div class="flex justify-end pt-2 border-t border-slate-100 dark:border-slate-800">
+                        <button onclick="switchTab('tasks'); filterByCategory(${c.id});" class="text-xs font-semibold text-blue-600 hover:underline">View Tasks &rarr;</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        if (window.lucide) window.lucide.createIcons();
+    }
+
+    function refreshCategorySelects() {
+        const selects = [
+            { id: 'filter-category', defaultText: 'All Categories', isFilter: true },
+            { id: 'export-filter-category', defaultText: 'All Categories', isFilter: true },
+            { id: 'new-task-category', defaultText: '(No Category)', isFilter: false },
+            { id: 'edit-task-category', defaultText: '(No Category)', isFilter: false }
+        ];
+        selects.forEach(({ id, defaultText, isFilter }) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const currentVal = el.value;
+            let html = `<option value="${isFilter ? 'ALL' : ''}">${defaultText}</option>`;
+            allCategories.forEach(c => {
+                html += `<option value="${c.id}">${escapeHtml(c.name)}</option>`;
+            });
+            el.innerHTML = html;
+            if (currentVal && Array.from(el.options).some(o => o.value === currentVal)) {
+                el.value = currentVal;
+            }
+        });
+    }
+
+    async function handleCreateCategory(e) {
+        e.preventDefault();
+        const name = document.getElementById('cat-name-input').value;
+        const color = document.getElementById('cat-color-input').value;
+        const description = document.getElementById('cat-desc-input').value;
+
+        try {
+            const res = await fetch('/api/categories/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+                body: JSON.stringify({ name, color, description })
+            });
+            if (res.ok) {
+                const newCat = await res.json();
+                allCategories.push(newCat);
+                document.getElementById('create-category-form').reset();
+                renderCategoriesGrid();
+                refreshCategorySelects();
+                showToast('Category created successfully!');
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('Failed to create category', 'error');
+        }
+    }
+
+    // EXPORT & PDF REPORT LOGIC
+    function renderReportPreview() {
+        const title = document.getElementById('export-title-input')?.value || 'TaskFlow Executive Productivity Report';
+        const titleEl = document.getElementById('report-preview-title');
+        if (titleEl) titleEl.innerText = title;
+
+        const statusFilter = document.getElementById('export-filter-status')?.value || 'ALL';
+        const catFilter = document.getElementById('export-filter-category')?.value || 'ALL';
+        const priorityFilter = document.getElementById('export-filter-priority')?.value || 'ALL';
+
+        const filtered = allTasks.filter(t => {
+            if (statusFilter !== 'ALL' && t.status !== statusFilter) return false;
+            if (catFilter !== 'ALL' && String(t.category_id) !== String(catFilter)) return false;
+            if (priorityFilter !== 'ALL' && t.priority !== priorityFilter) return false;
+            return true;
+        });
+
+        const total = filtered.length;
+        const completed = filtered.filter(t => t.status === 'COMPLETED').length;
+        const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+        document.getElementById('report-stat-total').innerText = total;
+        document.getElementById('report-stat-completed').innerText = completed;
+        document.getElementById('report-stat-rate').innerText = rate + '%';
+
+        const tbody = document.getElementById('report-preview-tbody');
+        if (tbody) {
+            tbody.innerHTML = filtered.map(t => `
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                    <td class="py-2.5 px-3 font-semibold text-slate-800 dark:text-slate-100">${escapeHtml(t.title)}</td>
+                    <td class="py-2.5 px-3">${escapeHtml(t.category_name || '-')}</td>
+                    <td class="py-2.5 px-3 font-bold">${t.priority}</td>
+                    <td class="py-2.5 px-3 capitalize">${t.status.replace('_', ' ').toLowerCase()}</td>
+                    <td class="py-2.5 px-3">${t.due_date ? t.due_date.slice(0, 10) : 'None'}</td>
+                </tr>
+            `).join('');
+        }
+    }
+
+    function triggerExportCSV() {
+        let csvContent = "data:text/csv;charset=utf-8,ID,Title,Category,Priority,Status,Due Date\n";
+        allTasks.forEach(t => {
+            csvContent += `"${t.id}","${t.title.replace(/"/g, '""')}","${t.category_name}","${t.priority}","${t.status}","${t.due_date || ''}"\n`;
+        });
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `taskflow_report_${new Date().toISOString().slice(0,10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function triggerExportPDF() {
+        window.print();
+    }
+
+    // CREATE / EDIT / DELETE TASK MODAL ACTIONS
+    function openCreateModal(defaultStatus = 'TODO') {
+        const select = document.getElementById('new-task-status');
+        if (select) select.value = defaultStatus;
+        document.getElementById('create-modal')?.classList.remove('hidden');
+    }
+    function closeCreateModal() { document.getElementById('create-modal')?.classList.add('hidden'); }
+
+    async function handleCreateTaskSubmit(e) {
+        e.preventDefault();
+        const title = document.getElementById('new-task-title').value;
+        const description = document.getElementById('new-task-desc').value;
+        const category_id = document.getElementById('new-task-category').value;
+        const priority = document.getElementById('new-task-priority').value;
+        const status = document.getElementById('new-task-status').value;
+        const due_date = document.getElementById('new-task-due').value;
+
+        try {
+            const res = await fetch('/api/tasks/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+                body: JSON.stringify({
+                    title,
+                    description,
+                    category: category_id || null,
+                    category_id: category_id || null,
+                    priority,
+                    status,
+                    due_date: due_date || null
+                })
+            });
+            if (res.ok) {
+                const newTask = await res.json();
+                allTasks.unshift(newTask);
+                closeCreateModal();
+                document.getElementById('create-modal')?.querySelector('form')?.reset();
+                switchTab(currentTab);
+                showToast('Task added to workspace!');
+            } else {
+                showToast('Failed to create task', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('Network error creating task', 'error');
+        }
+    }
+
+    function openEditModal(taskId) {
+        const task = allTasks.find(t => t.id === taskId);
+        if (!task) return;
+        document.getElementById('edit-task-id').value = task.id;
+        document.getElementById('edit-task-title').value = task.title;
+        document.getElementById('edit-task-desc').value = task.description || '';
+        document.getElementById('edit-task-category').value = task.category_id || task.category || '';
+        document.getElementById('edit-task-priority').value = task.priority;
+        document.getElementById('edit-task-status').value = task.status;
+        document.getElementById('edit-task-due').value = task.due_date ? task.due_date.slice(0, 10) : '';
+        document.getElementById('edit-modal')?.classList.remove('hidden');
+    }
+    function closeEditModal() { document.getElementById('edit-modal')?.classList.add('hidden'); }
+
+    async function handleEditTaskSubmit(e) {
+        e.preventDefault();
+        const taskId = document.getElementById('edit-task-id').value;
+        const title = document.getElementById('edit-task-title').value;
+        const description = document.getElementById('edit-task-desc').value;
+        const category_id = document.getElementById('edit-task-category').value;
+        const priority = document.getElementById('edit-task-priority').value;
+        const status = document.getElementById('edit-task-status').value;
+        const due_date = document.getElementById('edit-task-due').value;
+
+        try {
+            const res = await fetch(`/api/tasks/${taskId}/`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrftoken },
+                body: JSON.stringify({
+                    title,
+                    description,
+                    category: category_id || null,
+                    category_id: category_id || null,
+                    priority,
+                    status,
+                    due_date: due_date || null
+                })
+            });
+            if (res.ok) {
+                const updated = await res.json();
+                const idx = allTasks.findIndex(t => t.id === Number(taskId));
+                if (idx !== -1) allTasks[idx] = updated;
+                closeEditModal();
+                switchTab(currentTab);
+                showToast('Task updated successfully!');
+            } else {
+                showToast('Failed to update task', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('Network error updating task', 'error');
+        }
+    }
+
+    let pendingDeleteTaskId = null;
+    function requestDeleteTask(taskId) {
+        pendingDeleteTaskId = taskId;
+        document.getElementById('delete-modal')?.classList.remove('hidden');
+        if (window.lucide) window.lucide.createIcons();
+    }
+    function closeDeleteModal() {
+        pendingDeleteTaskId = null;
+        document.getElementById('delete-modal')?.classList.add('hidden');
+    }
+    async function confirmDeleteTaskAction() {
+        if (!pendingDeleteTaskId) return;
+        const taskId = pendingDeleteTaskId;
+        closeDeleteModal();
+        try {
+            const res = await fetch(`/api/tasks/${taskId}/`, {
+                method: 'DELETE',
+                headers: { 'X-CSRFToken': csrftoken }
+            });
+            allTasks = allTasks.filter(t => t.id !== taskId);
+            switchTab(currentTab);
+            showToast('Task removed from workspace.');
+        } catch (err) {
+            console.error(err);
+            showToast('Failed to delete task', 'error');
+        }
+    }
+
+    function triggerDeleteFromEdit() {
+        const id = Number(document.getElementById('edit-task-id').value);
+        closeEditModal();
+        requestDeleteTask(id);
+    }
+
+    // DRAWERS & MODALS
+    function openNotificationsDrawer() {
+        document.getElementById('notifications-drawer')?.classList.remove('translate-x-full');
+    }
+    function closeNotificationsDrawer() {
+        document.getElementById('notifications-drawer')?.classList.add('translate-x-full');
+    }
+    function sweepNotifications() {
+        showToast('Evaluated all tasks. Deadline notifications swept.');
+    }
+    function showToast(message, type = 'success') {
+        let container = document.getElementById('toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toast-container';
+            container.className = 'fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none';
+            document.body.appendChild(container);
+        }
+        const toast = document.createElement('div');
+        const isError = type === 'error';
+        toast.className = `px-4 py-2.5 rounded-xl shadow-lg border text-xs font-semibold flex items-center gap-2 transform transition-all duration-300 pointer-events-auto ${
+            isError 
+            ? 'bg-rose-950 text-rose-200 border-rose-800' 
+            : 'bg-slate-900 text-white border-slate-700'
+        }`;
+        toast.innerHTML = `<span class="w-2 h-2 rounded-full ${isError ? 'bg-rose-500' : 'bg-emerald-400'}"></span><span>${escapeHtml(message)}</span>`;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(10px)';
+            setTimeout(() => toast.remove(), 300);
+        }, 2500);
+    }
+    function openProfileModal() { document.getElementById('profile-modal')?.classList.remove('hidden'); }
+    function closeProfileModal() { document.getElementById('profile-modal')?.classList.add('hidden'); }
+
+    // UTILITIES
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function getPriorityClass(p) {
+        if (p === 'URGENT') return 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300';
+        if (p === 'HIGH') return 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300';
+        if (p === 'MEDIUM') return 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300';
+        return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
+    }
+    function getPriorityWeight(p) {
+        if (p === 'URGENT') return 4;
+        if (p === 'HIGH') return 3;
+        if (p === 'MEDIUM') return 2;
+        return 1;
+    }
+
+    // INITIALIZATION
+    document.addEventListener('DOMContentLoaded', () => {
+        refreshCategorySelects();
+        renderKanban();
+        applyTaskFilters();
+        renderCategoriesGrid();
+        switchTab('dashboard');
+        // Sync color hex input
+        document.getElementById('cat-color-input')?.addEventListener('input', (e) => {
+            const hex = document.getElementById('cat-color-hex');
+            if (hex) hex.value = e.target.value;
+        });
+    });
+</script>
+{% endblock %}

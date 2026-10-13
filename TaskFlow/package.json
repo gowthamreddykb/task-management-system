@@ -1,0 +1,11 @@
+{
+  "name": "taskflow-fullstack",
+  "version": "1.0.0",
+  "description": "TaskFlow - Full-Stack Trip & Task Planner",
+  "private": true,
+  "scripts": {
+    "dev:frontend": "cd .. && npm run dev",
+    "dev:backend": "python manage.py runserver 8000",
+    "start": "python manage.py runserver 8000"
+  }
+}

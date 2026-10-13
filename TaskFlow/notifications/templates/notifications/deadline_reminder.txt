@@ -1,0 +1,13 @@
+Hello {{ user.first_name|default:user.username }},
+
+This is an automated reminder from TaskFlow.
+
+Your task "{{ task.title }}" is approaching its deadline:
+- Due Date: {{ task.due_date }}
+- Priority: {{ task.priority }}
+- Category: {{ task.category.name|default:"General" }}
+
+Please visit your TaskFlow dashboard to update the status or review progress.
+
+Thank you,
+The TaskFlow Team

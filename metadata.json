@@ -1,0 +1,6 @@
+{
+  "name": "TaskFlow - Smart Task Management System",
+  "description": "A modern, full-featured Task Management System with Kanban drag-and-drop, category tagging, deadline email reminders, CSV/PDF export, interactive progress charts, and complete Django project deliverables.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

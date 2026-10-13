@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TaskFlow &bull; Trip & Task Planner{% endblock %}</title>
+    <!-- Tailwind CSS with class-based Dark Mode -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
+                    }
+                }
+            }
+        };
+    </script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chart.js CDN for Interactive Dashboard Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.25); border-radius: 9999px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.45); }
+        @media print {
+            header, footer, .no-print { display: none !important; }
+            body { background: white !important; color: black !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-[#0b0f19] text-slate-800 dark:text-slate-100 min-h-screen flex flex-col antialiased selection:bg-blue-600 selection:text-white transition-colors duration-200">
+    
+    <!-- Top Modern Navbar matching React Preview exactly -->
+    <header class="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 shadow-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+            
+            <!-- Left: Brand Logo & Title -->
+            <div class="flex items-center gap-3">
+                <a href="{% url 'home' %}" class="flex items-center gap-2.5 cursor-pointer select-none group">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
+                        <i data-lucide="compass" class="w-5 h-5 stroke-[2.2]"></i>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="font-extrabold text-base sm:text-lg tracking-tight bg-gradient-to-r from-slate-900 via-blue-950 to-indigo-900 dark:from-white dark:to-slate-200 bg-clip-text text-transparent">
+                            TaskFlow
+                        </span>
+                        <span class="text-[10px] font-semibold text-blue-600 dark:text-blue-400 tracking-wider uppercase -mt-1 hidden sm:block">
+                            Trip & Task Planner
+                        </span>
+                    </div>
+                </a>
+            </div>
+
+            {% if user.is_authenticated %}
+            <!-- Center: Navigation Tabs -->
+            <nav class="hidden md:flex items-center gap-1 bg-slate-100 dark:bg-slate-800/60 p-1 rounded-2xl border border-slate-200/70 dark:border-slate-700/60" id="main-nav-tabs">
+                <button type="button" onclick="switchTab('dashboard')" id="nav-btn-dashboard" class="nav-tab-btn flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs">
+                    <i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i>
+                    <span>Dashboard</span>
+                </button>
+                <button type="button" onclick="switchTab('kanban')" id="nav-btn-kanban" class="nav-tab-btn flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800/60">
+                    <i data-lucide="kanban" class="w-3.5 h-3.5"></i>
+                    <span>Kanban Board</span>
+                </button>
+                <button type="button" onclick="switchTab('tasks')" id="nav-btn-tasks" class="nav-tab-btn flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800/60">
+                    <i data-lucide="list-todo" class="w-3.5 h-3.5"></i>
+                    <span>Tasks</span>
+                </button>
+                <button type="button" onclick="switchTab('categories')" id="nav-btn-categories" class="nav-tab-btn flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800/60">
+                    <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+                    <span>Categories</span>
+                </button>
+                <button type="button" onclick="switchTab('reports')" id="nav-btn-reports" class="nav-tab-btn flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800/60">
+                    <i data-lucide="file-down" class="w-3.5 h-3.5"></i>
+                    <span>Export & PDF</span>
+                </button>
+            </nav>
+            {% endif %}
+
+            <!-- Right Controls -->
+            <div class="flex items-center gap-2 sm:gap-2.5">
+                {% if user.is_authenticated %}
+                    <!-- + New Task Button -->
+                    <button
+                        type="button"
+                        onclick="openCreateModal()"
+                        class="hidden sm:inline-flex items-center gap-1.5 h-9 px-3.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs hover:shadow-md transition-all active:scale-95 cursor-pointer"
+                    >
+                        <i data-lucide="plus" class="w-3.5 h-3.5 stroke-[2.5]"></i>
+                        <span>New Task</span>
+                    </button>
+
+                    <!-- Notifications Bell -->
+                    <button
+                        type="button"
+                        onclick="openNotificationsDrawer()"
+                        class="relative p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                        title="Notifications"
+                        aria-label="View notifications"
+                    >
+                        <i data-lucide="bell" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                        <span id="unread-badge" class="{% if not unread_notifications_count %}hidden{% endif %} absolute top-1.5 right-1.5 min-w-[18px] h-[18px] px-1 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">
+                            {{ unread_notifications_count|default:0 }}
+                        </span>
+                    </button>
+
+                    <!-- Dark / Light Theme Toggle -->
+                    <button
+                        type="button"
+                        onclick="toggleTheme()"
+                        class="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                        title="Toggle Light / Dark mode"
+                        aria-label="Toggle theme"
+                    >
+                        <span id="theme-icon-container">
+                            <i data-lucide="sun" class="w-4 h-4 sm:w-5 sm:h-5 text-amber-400"></i>
+                        </span>
+                    </button>
+
+                    <!-- User Profile Pill -->
+                    <button
+                        type="button"
+                        onclick="openProfileModal()"
+                        class="flex items-center gap-2 pl-1.5 pr-2 py-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700 cursor-pointer"
+                        title="User Profile"
+                    >
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-xs flex items-center justify-center shadow-xs">
+                            {{ user.first_name|default:user.username|slice:":1"|upper }}
+                        </div>
+                        <div class="hidden lg:flex flex-col text-left">
+                            <span class="text-xs font-semibold text-slate-800 dark:text-slate-100 leading-tight">
+                                {{ user.first_name|default:user.username }}
+                            </span>
+                            <span class="text-[10px] text-slate-400 leading-none">
+                                {{ user.email|default:"user@taskflow.dev" }}
+                            </span>
+                        </div>
+                    </button>
+
+                    <!-- Sign Out Button -->
+                    <a
+                        href="{% url 'logout' %}"
+                        class="p-2 rounded-xl text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                        title="Sign Out"
+                        aria-label="Sign Out"
+                    >
+                        <i data-lucide="log-out" class="w-4 h-4"></i>
+                    </a>
+                {% else %}
+                    <!-- Guest Navigation (Sign In / Register) -->
+                    <a
+                        href="{% url 'login' %}"
+                        class="px-3.5 py-1.5 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60 text-xs font-semibold transition"
+                    >
+                        Sign In
+                    </a>
+                    <a
+                        href="{% url 'register' %}"
+                        class="px-4 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold transition shadow-md shadow-blue-500/20"
+                    >
+                        Create Account
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if user.is_authenticated %}
+        <!-- Mobile Bottom Tab Bar -->
+        <div class="md:hidden border-t border-slate-200 dark:border-slate-800/80 px-2 py-1.5 flex items-center justify-around bg-white/95 dark:bg-slate-950/90 text-xs">
+            <button onclick="switchTab('dashboard')" class="mobile-tab-btn p-1.5 text-blue-600 dark:text-blue-400 font-bold flex flex-col items-center" data-tab="dashboard">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                <span class="text-[10px] mt-0.5">Dashboard</span>
+            </button>
+            <button onclick="switchTab('kanban')" class="mobile-tab-btn p-1.5 text-slate-500 dark:text-slate-400 font-medium flex flex-col items-center" data-tab="kanban">
+                <i data-lucide="kanban" class="w-4 h-4"></i>
+                <span class="text-[10px] mt-0.5">Kanban</span>
+            </button>
+            <button onclick="switchTab('tasks')" class="mobile-tab-btn p-1.5 text-slate-500 dark:text-slate-400 font-medium flex flex-col items-center" data-tab="tasks">
+                <i data-lucide="list-todo" class="w-4 h-4"></i>
+                <span class="text-[10px] mt-0.5">Tasks</span>
+            </button>
+            <button onclick="switchTab('categories')" class="mobile-tab-btn p-1.5 text-slate-500 dark:text-slate-400 font-medium flex flex-col items-center" data-tab="categories">
+                <i data-lucide="layers" class="w-4 h-4"></i>
+                <span class="text-[10px] mt-0.5">Categories</span>
+            </button>
+            <button onclick="switchTab('reports')" class="mobile-tab-btn p-1.5 text-slate-500 dark:text-slate-400 font-medium flex flex-col items-center" data-tab="reports">
+                <i data-lucide="file-down" class="w-4 h-4"></i>
+                <span class="text-[10px] mt-0.5">Export</span>
+            </button>
+        </div>
+        {% endif %}
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-200 dark:border-slate-800/80 py-6 text-center text-xs text-slate-500 dark:text-slate-400 bg-white/50 dark:bg-slate-900/40">
+        <p>TaskFlow &bull; Trip & Task Planner Workspace &bull; Localhost</p>
+    </footer>
+
+    <!-- Theme Initialization & Script -->
+    <script>
+        // Initialize Theme from localStorage or Default to Dark
+        function initTheme() {
+            const savedTheme = localStorage.getItem('taskflow_theme') || 'dark';
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+            updateThemeIcon(savedTheme === 'dark');
+        }
+
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('taskflow_theme', isDark ? 'dark' : 'light');
+            updateThemeIcon(isDark);
+            // Trigger chart re-render if function exists
+            if (window.renderDashboardCharts) {
+                window.renderDashboardCharts(isDark);
+            }
+        }
+
+        function updateThemeIcon(isDark) {
+            const container = document.getElementById('theme-icon-container');
+            if (!container) return;
+            if (isDark) {
+                container.innerHTML = '<i data-lucide="sun" class="w-4 h-4 sm:w-5 sm:h-5 text-amber-400"></i>';
+            } else {
+                container.innerHTML = '<i data-lucide="moon" class="w-4 h-4 sm:w-5 sm:h-5 text-slate-600"></i>';
+            }
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+        });
+    </script>
+</body>
+</html>
