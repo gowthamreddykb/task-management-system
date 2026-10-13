@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🚀 TaskFlow — Trip & Task Planner
 
 A modern, high-performance **Single-User Trip & Task Planner** built with a responsive **React + Vite** frontend and a robust **Django REST Framework** backend with SQLite.
@@ -270,3 +271,6 @@ All endpoints accept and return JSON with standard HTTP status codes:
 ---
 
 🎉 **You are all set! Enjoy organizing your tasks and trips with TaskFlow.**
+=======
+# task-management-system
+>>>>>>> 90c28c58ec6be113e9241c9166a23bdc2dae30fe
